@@ -20,7 +20,21 @@ async function run() {
     try {
         const productCategoriesCollections = client.db('resaleMarket').collection('categories');
         const productCollections = client.db('resaleMarket').collection('products');
-        const usersCollections = client.db('resaleMarket').collection('users');
+        const userCollections = client.db('resaleMarket').collection('users');
+
+        // Add New Category
+        app.post('/categories', async (req, res) => {
+            const category = req.body;
+            const result = await productCategoriesCollections.insertOne(category);
+            res.send(result);
+        })
+
+        // Add New Products
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollections.insertOne(product);
+            res.send(result);
+        })
 
         // All Categories
         app.get('/categories', async (req, res) => {
@@ -29,6 +43,7 @@ async function run() {
             const categories = await cursor.toArray();
             res.send(categories);
         })
+
 
         // All Products
         app.get('/allProducts', async (req, res) => {
@@ -51,12 +66,27 @@ async function run() {
             res.send(products);
         })
 
-        // All Users
+        // Save Users
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await userCollections.insertOne(user);
+            res.send(result);
+        })
+
+        // Display All Users
         app.get('/users', async (req, res) => {
             const query = {}
-            const cursor = usersCollections.find(query);
+            const cursor = userCollections.find(query);
             const users = await cursor.toArray();
             res.send(users);
+        })
+
+        // Delete User by id
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await userCollections.deleteOne(filter);
+            res.send(result);
         })
     }
     finally {
