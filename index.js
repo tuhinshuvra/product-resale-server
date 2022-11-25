@@ -30,6 +30,15 @@ async function run() {
             res.send(categories);
         })
 
+        // All Products
+        app.get('/allProducts', async (req, res) => {
+            const query = {}
+            const cursor = productCollections.find(query);
+            const allProducts = await cursor.toArray();
+            res.send(allProducts);
+        })
+
+        // Products by category
         app.get('/products', async (req, res) => {
             let query = {};
             if (req.query.category) {
