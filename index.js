@@ -81,6 +81,20 @@ async function run() {
             res.send(users);
         })
 
+        // User make admin
+        app.put('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const options = { upsert: true };
+            const result = await userCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
         // Delete User by id
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
