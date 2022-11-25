@@ -29,14 +29,7 @@ async function run() {
             res.send(result);
         })
 
-        // Add New Products
-        app.post('/products', async (req, res) => {
-            const product = req.body;
-            const result = await productCollections.insertOne(product);
-            res.send(result);
-        })
-
-        // All Categories
+        // Show All Categorie
         app.get('/categories', async (req, res) => {
             const query = {}
             const cursor = productCategoriesCollections.find(query);
@@ -44,8 +37,22 @@ async function run() {
             res.send(categories);
         })
 
+        // Delete Category
+        app.delete('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productCategoriesCollections.deleteOne(filter);
+            res.send(result);
+        })
 
-        // All Products
+        // Add New Products
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollections.insertOne(product);
+            res.send(result);
+        })
+
+        //Show All Products
         app.get('/allProducts', async (req, res) => {
             const query = {}
             const cursor = productCollections.find(query);
@@ -73,7 +80,7 @@ async function run() {
             res.send(result);
         })
 
-        // Display All Users
+        // Show All Users
         app.get('/users', async (req, res) => {
             const query = {}
             const cursor = userCollections.find(query);
@@ -95,7 +102,7 @@ async function run() {
             res.send(result);
         })
 
-        // Delete User by id
+        // Delete User
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
