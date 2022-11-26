@@ -85,6 +85,14 @@ async function run() {
             res.send(allProducts);
         })
 
+        // Show a product by id
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const product = await productCollections.findOne(query);
+            res.send(product);
+        })
+
         // Products by category
         app.get('/products', async (req, res) => {
             let query = {};
