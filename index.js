@@ -97,6 +97,25 @@ async function run() {
             res.send(product);
         })
 
+        // show all products by seller email
+        app.get('/productOnMail', async (req, res) => {
+
+            const decoded = req.decoded;
+            // if (decoded.email !== req.query.email) {
+            //     res.status(403).send({ message: 'Forbidden Access' })
+            // }
+
+            let query = {};
+            if (req.query.email) {
+                query = {
+                    email: req.query.email
+                }
+            }
+            const cursor = productCollections.find(query)
+            const productOnMail = await cursor.toArray();
+            res.send(productOnMail);
+        })
+
         // Update a Product
         app.put('/products/:id', async (req, res) => {
             const id = req.params.id;
@@ -169,6 +188,14 @@ async function run() {
             const options = { upsert: true };
             const result = await userCollections.updateOne(filter, updatedDoc, options);
             res.send(result);
+        })
+
+        // check admin users
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await userCollections.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
         })
 
         // Delete User
