@@ -22,6 +22,9 @@ async function run() {
         const productCollections = client.db('resaleMarket').collection('products');
         const userCollections = client.db('resaleMarket').collection('users');
 
+
+        //************** */ Category Related all Query  ********************
+
         // Add New Category
         app.post('/categories', async (req, res) => {
             const category = req.body;
@@ -61,7 +64,6 @@ async function run() {
             res.send(result);
         })
 
-
         // Delete a Category
         app.delete('/categories/:id', async (req, res) => {
             const id = req.params.id;
@@ -69,6 +71,8 @@ async function run() {
             const result = await productCategoriesCollections.deleteOne(filter);
             res.send(result);
         })
+
+        //************** */ Product Related all Query  ********************
 
         // Add New Products
         app.post('/products', async (req, res) => {
@@ -93,6 +97,14 @@ async function run() {
             res.send(product);
         })
 
+        // Delete a product
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productCollections.deleteOne(filter);
+            res.send(result);
+        })
+
         // Products by category
         app.get('/products', async (req, res) => {
             let query = {};
@@ -105,6 +117,9 @@ async function run() {
             const products = await cursor.toArray();
             res.send(products);
         })
+
+
+        //************** */ User Related all Query  ********************
 
         // Save Users
         app.post('/users', async (req, res) => {
@@ -151,13 +166,10 @@ run().catch(error => console.log(error))
 
 
 
-
-
-
 app.get('/', (req, res) => {
     res.send('Resale Market Server is running ...............')
 })
 
 app.listen(port, () => {
-    console.log('The Reasale Market Server is running on port: ', port);
+    console.log('The Easy Resale Market Server is running on port: ', port);
 })
