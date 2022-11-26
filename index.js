@@ -29,7 +29,7 @@ async function run() {
             res.send(result);
         })
 
-        // Show All Categorie
+        // Show All Category
         app.get('/categories', async (req, res) => {
             const query = {}
             const cursor = productCategoriesCollections.find(query);
@@ -37,7 +37,32 @@ async function run() {
             res.send(categories);
         })
 
-        // Delete Category
+        // Show a category by id
+        app.get('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const category = await productCategoriesCollections.findOne(query);
+            res.send(category);
+        })
+
+        // Update a Category
+        app.put('/categories/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const category = req.body;
+            const option = { upsert: true };
+            const updatedCategory = {
+                $set: {
+                    title: category.title,
+                    description: category.description,
+                }
+            }
+            const result = await productCategoriesCollections.updateOne(filter, updatedCategory, option)
+            res.send(result);
+        })
+
+
+        // Delete a Category
         app.delete('/categories/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
