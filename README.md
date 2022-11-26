@@ -1,4 +1,4 @@
-## ProjectName: Easy Resale Market is resale product server site
+## ProjectName: Easy Resale Market is resale product site
 ## Live Site Link :https://easy-resale-market.web.app
 
 ################# About the Site ##################
