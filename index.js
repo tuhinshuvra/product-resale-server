@@ -16,11 +16,57 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+function verifyJWT(req, res, next) {
+    // console.log('Token inside VerifyJWT', req.headers.authorization);
+    const authheader = req.headers.authorization;
+    if (!authheader) {
+        return res.status(401).send('Un authorized Access.')
+    }
+    const token = authheader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+}
+
+
 async function run() {
     try {
         const productCategoriesCollections = client.db('resaleMarket').collection('categories');
         const productCollections = client.db('resaleMarket').collection('products');
         const userCollections = client.db('resaleMarket').collection('users');
+        const orderCollections = client.db('resaleMarket').collection('orders');
+        const paymentCollections = client.db('resaleMarket').collection('payments');
+
+
+        // Note: VerifyAdmin always be after verifyJWT
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userCollections.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'Forbidden Access you are not admin' })
+            }
+            next();
+        }
+
+        // Note: VerifyAdmin always be after verifyJWT
+        const verifySeller = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userCollections.findOne(query);
+
+            if (user?.userType !== 'seller') {
+                return res.status(403).send({ message: 'Forbidden Access, you are not a seller' })
+            }
+            next();
+        }
 
 
         //************** */ Category Related all Query  ********************
@@ -158,6 +204,15 @@ async function run() {
             res.send(products);
         })
 
+        //************** */ Orders Related all Query  ********************
+
+        app.get('/orders', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const orders = await orderCollections.find(query).toArray();
+            res.send(orders);
+        })
+
 
         //************** */ User Related all Query  ********************
 
@@ -182,7 +237,21 @@ async function run() {
             const filter = { _id: ObjectId(id) }
             const updatedDoc = {
                 $set: {
-                    role: 'admin'
+                    role: 'admin',
+                }
+            }
+            const options = { upsert: true };
+            const result = await userCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+        // User verification
+        app.put('/users/verification/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    verification: 'verified',
                 }
             }
             const options = { upsert: true };
@@ -196,6 +265,14 @@ async function run() {
             const query = { email }
             const user = await userCollections.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' });
+        })
+
+        // check verified users
+        app.get('/users/verification/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await userCollections.findOne(query);
+            res.send({ isVerified: user?.verification === 'verified' });
         })
 
         // check seller users
@@ -212,6 +289,19 @@ async function run() {
             const filter = { _id: ObjectId(id) };
             const result = await userCollections.deleteOne(filter);
             res.send(result);
+        })
+
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await userCollections.findOne(query)
+            // console.log(user);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+                return res.send({ accessToken: token });
+            }
+            res.status(403).send({ accessToken: '' })
+
         })
     }
     finally {
