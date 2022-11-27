@@ -40,7 +40,7 @@ async function run() {
         const productCategoriesCollections = client.db('resaleMarket').collection('categories');
         const productCollections = client.db('resaleMarket').collection('products');
         const userCollections = client.db('resaleMarket').collection('users');
-        const orderCollections = client.db('resaleMarket').collection('orders');
+        const bookingCollections = client.db('resaleMarket').collection('bookings');
         const paymentCollections = client.db('resaleMarket').collection('payments');
 
 
@@ -206,11 +206,60 @@ async function run() {
 
         //************** */ Orders Related all Query  ********************
 
-        app.get('/orders', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email }
-            const orders = await orderCollections.find(query).toArray();
-            res.send(orders);
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body
+            console.log(booking);
+            const query = {
+                product: booking.product,
+                price: booking.price,
+                email: booking.email,
+                phone: booking.phone,
+                date: booking.date,
+                time: booking.time,
+                location: booking.location,
+                buyer: booking.buyer,
+            }
+            // const alreadyBookded = await bookingCollections.find(query).toArray();
+
+            // if (alreadyBookded.length) {
+            //     const message = `You have already have a booking on  ${booking.appointmentDate}`;
+            //     return res.send({ acknowledged: false, message })
+            // }
+            const result = await bookingCollections.insertOne(booking);
+            res.send(result);
+        })
+
+        app.get('/allBooking', async (req, res) => {
+            const query = {}
+            const cursor = bookingCollections.find(query);
+            const bookings = await cursor.toArray();
+            res.send(bookings);
+        })
+
+        app.get('/bookingsOnMail', async (req, res) => {
+
+            // const decoded = req.decoded;
+            // if (decoded.email !== req.query.email) {
+            //     res.status(403).send({ message: 'Forbidden Access' })
+            // }
+
+            let query = {};
+            if (req.query.email) {
+                query = {
+                    email: req.query.email
+                }
+            }
+            const cursor = bookingCollections.find(query)
+            const bookings = await cursor.toArray();
+            res.send(bookings);
+        })
+
+        // Delete a Booking
+        app.delete('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await bookingCollections.deleteOne(filter);
+            res.send(result);
         })
 
 
