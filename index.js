@@ -164,6 +164,33 @@ async function run() {
             res.send(productOnMail);
         })
 
+        // set product as reported
+        app.put('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    status: 'reported',
+                }
+            }
+            const options = { upsert: true };
+            const result = await productCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+        // get all reported product
+        app.get('/reportedProducts', async (req, res) => {
+            let query = {};
+            if (req.query.status) {
+                query = {
+                    status: req.query.status
+                }
+            }
+            const cursor = productCollections.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
+        })
+
         // Update a Product
         app.put('/products/:id', async (req, res) => {
             const id = req.params.id;
