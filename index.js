@@ -240,6 +240,7 @@ async function run() {
             // console.log(booking);
             const query = {
                 product: booking.product,
+                title: booking.title,
                 price: booking.price,
                 email: booking.email,
                 phone: booking.phone,
