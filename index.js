@@ -1,9 +1,11 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
-const { query } = require('express');
 require('dotenv').config();
 var jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+// console.log("stripe : ", stripe);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -56,7 +58,7 @@ async function run() {
             next();
         }
 
-        // Note: VerifyAdmin always be after verifyJWT
+        // Note: VerifySeller always be after VerifyAdmin
         const verifySeller = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
@@ -208,7 +210,7 @@ async function run() {
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body
-            console.log(booking);
+            // console.log(booking);
             const query = {
                 product: booking.product,
                 price: booking.price,
@@ -229,6 +231,7 @@ async function run() {
             res.send(result);
         })
 
+        // Show all booking
         app.get('/allBooking', async (req, res) => {
             const query = {}
             const cursor = bookingCollections.find(query);
@@ -236,7 +239,16 @@ async function run() {
             res.send(bookings);
         })
 
-        app.get('/bookingsOnMail', async (req, res) => {
+        //Find booking on id
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingCollections.findOne(query);
+            res.send(booking);
+        })
+
+        // Show bookin on email
+        app.get('/bookingsOnEail', async (req, res) => {
 
             // const decoded = req.decoded;
             // if (decoded.email !== req.query.email) {
@@ -281,7 +293,15 @@ async function run() {
         })
 
         // User make admin
-        app.put('/users/admin/:id', async (req, res) => {
+        app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userCollections.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
             const updatedDoc = {
@@ -350,8 +370,53 @@ async function run() {
                 return res.send({ accessToken: token });
             }
             res.status(403).send({ accessToken: '' })
-
         })
+
+
+        // ##############Payment System###########################
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollections.insertOne(payment);
+            const id = payment.bookingId
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedResult = await bookingCollections.updateOne(filter, updatedDoc)
+            res.send(result);
+        })
+
+        // All Payments
+        app.get('/payments', async (req, res) => {
+            const query = {}
+            const cursor = paymentCollections.find(query);
+            const payment = await cursor.toArray();
+            res.send(payment);
+        })
+
+
+
     }
     finally {
     }
